@@ -1,0 +1,16 @@
+name: "nodiff"
+on: [pull_request, push]
+
+jobs:
+  nodiff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: nodiff
+        uses: ./
+        with:
+          do-this-in-response: |
+            { "fail": false }
+      - run: |
+          echo -e "You made meaningless changes to:\n${{ steps.nodiff.outputs.filesAsMarkdownList }}"
+        shell: bash
