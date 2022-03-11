@@ -1,0 +1,18 @@
+name: "nodiff"
+on: pull_request
+
+jobs:
+  nodiff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - id: nodiff
+        uses: ./
+        with:
+          files-to-judge: >-
+            index.js
+          do-this-in-response: |
+            { fail: false }
+      - run: |
+          echo "You made meaningless changes to: ${{ steps.nodiff.outputs.files }}"
+        shell: bash
