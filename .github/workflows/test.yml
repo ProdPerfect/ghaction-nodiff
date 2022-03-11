@@ -1,0 +1,15 @@
+name: "unit-tests"
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  # Run unit tests
+  units:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: yarn install --frozen-lockfile
+    - run: yarn test

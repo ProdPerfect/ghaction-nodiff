@@ -1,0 +1,89 @@
+name: 'nodiff'
+description: 'React to meaningless file changes.'
+inputs:
+  files-to-judge:
+    description: |
+      Space-separated list of files to judge. Globs are supported.
+      @see https://github.com/actions/toolkit/tree/main/packages/glob#patterns
+      for details on supported patterns.
+
+      NOTE: Since GitHub Actions support only string input values, using YAML's
+      `>-` string syntax is recommended for readability.
+      @see https://yaml-multiline.info
+    required: true
+
+
+  # A pair of mutually exclusive flags indicating whether this monitor cares
+  # that no meaningful changes were made to ALL files in the `files-to-judge`
+  # list, or ANY files in that list.
+  # Choose one; giving both is a configuration error.
+  # Default: judge-any
+  judge-any:
+    description: |
+      A flag indicating this monitor only cares if meaningless changes were
+      made to ANY of the given `files-to-judge`.
+    required: false
+    default: true
+
+  judge-all:
+    description: |
+      A flag indicating this monitor only cares if meaningless changes were
+      made to ALL of the given `files-to-judge`.
+    required: false
+    default: false
+
+  do-this-in-response:
+    description: |
+      If no meaningful changes to the monitored file(s) are detected, this
+      action can respond in one or more predefined ways. By default, this
+      action simply fails, catering to the use-case of blocking PRs containing
+      meaningless changes.
+
+      NOTE: This is a JSON object string, not a YAML map. GitHub Actions do
+      not currently support any input types other than strings.
+
+      NOTE: Many of these reactions are only applicable to `pull-request`
+      events, but some, like `fail`, are event-agnostic. If a reaction is
+      specified but not applicable to an event, it has no effect.
+
+      Supported reactions:
+        - `comment` (string)
+          If provided, this comment will be left on the PR.
+
+          The following patterns are interpolated:
+            `%(files)`
+            The same space-separated list of filenames output by this action
+
+            `%(filesAsMarkdownList)`:
+             A valid unordered Markdown list of the items in `files`
+
+          Ex.
+             "The changes you made to these files are meaningless:\n%(filesAsMarkdownList)\nDid you mean to touch them?"
+          -->
+             The changes you made to these files are meaningless:
+             - foo.py
+             - src/config/bar.json
+             - docs/dontreadme.md
+             Did you intend to touch them?
+
+        - `alert` (array of strings)
+          If provided, these users/aliases will be pinged in a comment. These
+          will be combined with any given `comment` or otherwise
+          given a comment of their own.
+
+        - `fail` (boolean)
+          Default: true
+          If provided, this action will fail if no meaningful changes are
+          detected.
+    required: false
+    default: |
+      { "fail": true }
+outputs:
+  files:
+    description: |
+      A space-separated string of file paths, relative to the project root,
+      that comprise whatever subset of the input `files-to-judge` were changed
+      in meaningless ways in the event that triggered the action.
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
