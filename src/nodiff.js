@@ -3,7 +3,7 @@ import { exec } from '@actions/exec';
 import { context } from '@actions/github';
 
 export default async function nodiff() {
-  console.log(context); // TODO delete
+  // console.log(context); // TODO delete
   if (context.eventName != 'pull_request') {
     return setFailed(`Sorry, this action isn't designed for '${context.eventName}' events.`);
   }
@@ -39,8 +39,8 @@ function parseInputs() {
 }
 
 async function meaninglessDiff(filesToJudge, baseRef) {
-  var meaningfulDiffCmd = `git diff --ignore-space-change --ignore-blank-lines --numstat -- ${filesToJudge} | awk '{print $3}'`;
-  var meaninglessDiffCmd = `comm -23 <(git diff --name-only ${baseRef} -- ${filesToJudge}) <(${meaningfulDiffCmd})`;
+  var meaningfulDiffCmd = `git diff --ignore-space-change --ignore-blank-lines --numstat origin/${baseRef} HEAD -- ${filesToJudge} | awk '{print $3}'`;
+  var meaninglessDiffCmd = `comm -23 <(git diff --name-only origin/${baseRef} HEAD -- ${filesToJudge}) <(${meaningfulDiffCmd})`;
   var stdout = '';
   var stderr = '';
   try {

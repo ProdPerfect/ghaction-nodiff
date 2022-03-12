@@ -21,12 +21,12 @@ var github = __nccwpck_require__(5438);
 
 
 async function nodiff() {
-  console.log(github.context); // TODO delete
+  // console.log(context); // TODO delete
   if (github.context.eventName != 'pull_request') {
     return (0,core.setFailed)(`Sorry, this action isn't designed for '${github.context.eventName}' events.`);
   }
 
-  var { doThis, filesToJudge } = parseInputs();
+  var { /* doThis, */ filesToJudge } = parseInputs();
   var {
     base: { ref: baseRef }
   } = github.context.payload[github.context.eventName];
@@ -42,10 +42,11 @@ function parseInputs() {
       comment: null,
       alert: null,
       fail: true,
+      ...JSON.parse((0,core.getInput)('do-this-in-response', {required: false}) || "{}")
     };
   } catch (syntaxError) {
     (0,core.setFailed)('`do-this-in-response` must be valid JSON, please correct your config');
-    return process.exit();
+    process.exit();
   }
 
   return {
@@ -56,8 +57,8 @@ function parseInputs() {
 }
 
 async function meaninglessDiff(filesToJudge, baseRef) {
-  var meaningfulDiffCmd = `git diff --ignore-space-change --ignore-blank-lines --numstat -- ${filesToJudge} | awk '{print $3}'`;
-  var meaninglessDiffCmd = `comm -23 <(git diff --name-only ${baseRef} -- ${filesToJudge}) <(${meaningfulDiffCmd})`;
+  var meaningfulDiffCmd = `git diff --ignore-space-change --ignore-blank-lines --numstat origin/${baseRef} HEAD -- ${filesToJudge} | awk '{print $3}'`;
+  var meaninglessDiffCmd = `comm -23 <(git diff --name-only origin/${baseRef} HEAD -- ${filesToJudge}) <(${meaningfulDiffCmd})`;
   var stdout = '';
   var stderr = '';
   try {
@@ -77,11 +78,11 @@ async function meaninglessDiff(filesToJudge, baseRef) {
     );
   } catch (error) {
     (0,core.setFailed)(error);
-    return process.exit();
+    process.exit();
   } finally {
     if (exitCode != 0) {
       (0,core.setFailed)(`Something went wrong:\n${stderr}`);
-      return process.exit();
+      process.exit();
     }
   }
 
