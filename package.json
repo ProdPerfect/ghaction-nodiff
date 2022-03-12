@@ -8,9 +8,9 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
-    "prepare": "ncc build index.js -o dist --source-map --license licenses.txt",
+    "build": "ncc build index.js -o dist --source-map --license licenses.txt",
     "test": "jest",
-    "all": "yarn lint && yarn prepare && yarn test"
+    "all": "yarn lint && yarn build && yarn test"
   },
   "repository": {
     "type": "git",
