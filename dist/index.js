@@ -66,7 +66,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
       '/bin/bash',
       [
         '-c',
-        meaninglessDiffCmd
+        `"${meaninglessDiffCmd}"`
       ],
       null,
       {
