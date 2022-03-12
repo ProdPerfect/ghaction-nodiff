@@ -48,7 +48,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
       '/bin/bash',
       [
         '-c',
-        `comm -23 <(cat index.js) <(cat index.js)` // `"${meaninglessDiffCmd}"`
+        `comm -23 <(git diff --name-only origin/${baseRef} HEAD -- ${filesToJudge}) <(git diff --name-only origin/${baseRef} HEAD -- ${filesToJudge})` // `"${meaninglessDiffCmd}"`
       ],
       null,
       {
