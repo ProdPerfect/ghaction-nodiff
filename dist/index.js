@@ -123,17 +123,18 @@ async function meaninglessDiff(filesToJudge, baseRef) {
 async function requestReviews(githubHandles, githubToken) {
   var octokit = (0,github.getOctokit)(githubToken);
   var {
-    pull_request: { number },
+    pull_request: { number: pull_number },
     repository: {
-      name,
+      name: repo,
       owner: { login: owner }
     }
   } = github.context.payload;
-  console.log(number, name, owner);
-  // console.log(context.payload.repository);
-  // await octokit.rest.pulls.requestReviewers({
-
-  // })
+  await octokit.rest.pulls.requestReviewers({
+    owner,
+    repo,
+    pull_number,
+    reviewers: githubHandles
+  });
 }
 
 // CONCATENATED MODULE: ./index.js
