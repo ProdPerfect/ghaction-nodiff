@@ -21,7 +21,6 @@ var github = __nccwpck_require__(5438);
 
 
 async function nodiff() {
-  // console.log(context); // TODO delete
   if (github.context.eventName != 'pull_request') {
     return (0,core.setFailed)(`Sorry, this action isn't designed for '${github.context.eventName}' events.`);
   }
@@ -29,7 +28,7 @@ async function nodiff() {
   var { /* doThis, */ filesToJudge } = parseInputs();
   var {
     base: { ref: baseRef }
-  } = github.context.payload[github.context.eventName];
+  } = github.context.payload.pull_request; // NOTE(dabrady) Guaranteed to be there for `pull_request` events
 
   var { files, filesAsMarkdownList } = await meaninglessDiff(filesToJudge, baseRef);
   (0,core.setOutput)('files', files);

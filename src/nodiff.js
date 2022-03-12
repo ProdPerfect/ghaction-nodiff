@@ -3,7 +3,6 @@ import { exec } from '@actions/exec';
 import { context } from '@actions/github';
 
 export default async function nodiff() {
-  // console.log(context); // TODO delete
   if (context.eventName != 'pull_request') {
     return setFailed(`Sorry, this action isn't designed for '${context.eventName}' events.`);
   }
@@ -11,7 +10,7 @@ export default async function nodiff() {
   var { /* doThis, */ filesToJudge } = parseInputs();
   var {
     base: { ref: baseRef }
-  } = context.payload[context.eventName];
+  } = context.payload['pull_request']; // NOTE(dabrady) Guaranteed to be there for `pull_request` events
 
   var { files, filesAsMarkdownList } = await meaninglessDiff(filesToJudge, baseRef);
   setOutput('files', files);
