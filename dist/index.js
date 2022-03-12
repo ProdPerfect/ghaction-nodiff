@@ -20,9 +20,12 @@ var github = __nccwpck_require__(5438);
 
 
 
+// NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
+process.on('uncaughtException', core.setFailed);
+
 async function nodiff() {
   if (github.context.eventName != 'pull_request') {
-    return (0,core.setFailed)(`Sorry, this action isn't designed for '${github.context.eventName}' events.`);
+    throw new TypeError(`Sorry, this action isn't designed for '${github.context.eventName}' events.`);
   }
 
   var { /* doThis, */ filesToJudge } = parseInputs();
@@ -44,8 +47,7 @@ function parseInputs() {
       ...JSON.parse((0,core.getInput)('do-this-in-response', {required: false}) || "{}")
     };
   } catch (syntaxError) {
-    (0,core.setFailed)('`do-this-in-response` must be valid JSON, please correct your config');
-    process.exit();
+    throw new SyntaxError('`do-this-in-response` must be valid JSON, please correct your config');
   }
 
   return {
@@ -56,32 +58,27 @@ function parseInputs() {
 }
 
 async function meaninglessDiff(filesToJudge, baseRef) {
-  var meaningfulDiffCmd = `git diff --ignore-space-change --ignore-blank-lines --numstat origin/${baseRef} HEAD -- ${filesToJudge} | awk '{print $3}'`;
+  var meaningfulDiffCmd =
+      `git diff --ignore-space-change --ignore-blank-lines --numstat origin/${baseRef} HEAD -- ${filesToJudge} | awk '{print $3}'`;
   var meaninglessDiffCmd = `comm -23 <(git diff --name-only origin/${baseRef} HEAD -- ${filesToJudge}) <(${meaningfulDiffCmd})`;
   var stdout = '';
   var stderr = '';
-  try {
-    var exitCode = await (0,exec.exec)(
-      '/bin/bash', ['-c', meaninglessDiffCmd],
-      {
-        listeners: {
-          stdout: function saveStdout(data) {
-            stdout += data.toString();
-          },
-          stderr: function saveStderr(data) {
-            stderr += data.toString();
-          },
-        }
+  var exitCode = await (0,exec.exec)(
+    '/bin/bash', ['-c', meaninglessDiffCmd],
+    {
+      listeners: {
+        stdout: function saveStdout(data) {
+          stdout += data.toString();
+        },
+        stderr: function saveStderr(data) {
+          stderr += data.toString();
+        },
       }
-    );
-  } catch (error) {
-    (0,core.setFailed)(error);
-    process.exit();
-  } finally {
-    if (exitCode != 0) {
-      (0,core.setFailed)(`Something went wrong:\n${stderr}`);
-      process.exit();
     }
+  );
+
+  if (exitCode != 0) {
+    throw new Error(`Something went wrong:\n${stderr}`);
   }
 
   return {
