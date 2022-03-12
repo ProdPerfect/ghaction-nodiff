@@ -48,7 +48,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
       '/bin/bash',
       [
         '-c',
-        `"${meaninglessDiffCmd}"`
+        `"comm -23 index.js index.js"` // `"${meaninglessDiffCmd}"`
       ],
       null,
       {
