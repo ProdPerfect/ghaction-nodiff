@@ -58,6 +58,13 @@ inputs:
     required: false
     default: |
       { "fail": true }
+  github-token:
+    description: |
+      A properly provisioned access token required when you wish to alert or
+      comment on the associated pull request.
+      This can simply be the `secrets.GITHUB_TOKEN` implicitly provided to your
+      GitHub Workflow.
+    required: true
 outputs:
   files:
     description: |

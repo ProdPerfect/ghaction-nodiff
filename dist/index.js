@@ -32,7 +32,7 @@ async function nodiff() {
   var {
     base: { ref: baseRef }
   } = github.context.payload.pull_request; // NOTE(dabrady) Guaranteed to be there for `pull_request` events
-  var { doThisInResponse,  filesToJudge } = extractActionInputs();
+  var { doThisInResponse, filesToJudge, githubToken } = extractActionInputs();
 
   // Get the list of files that have been changed meaninglessly.
   var files = await meaninglessDiff(filesToJudge, baseRef);
@@ -41,27 +41,29 @@ async function nodiff() {
     return;
   }
 
-  // Set the outputs.
-
   var filesAsSpaceSeparatedList = files.join(' ');
   // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
   var filesAsMarkdownList = files.join('\n').replace(/^/gm, '- ');
 
+  // Set the outputs.
   (0,core.setOutput)('files', filesAsSpaceSeparatedList);
   (0,core.setOutput)('filesAsMarkdownList', filesAsMarkdownList);
 
-  // Any or all of these may be provided.
-  var { alert, comment, fail } = doThisInResponse;
+  // Respond as directed. Any or all of these may be provided.
+  var { alert: githubHandles, comment, fail } = doThisInResponse;
   if (fail) {
     (0,core.setFailed)(FAILURE_MESSAGE + filesAsMarkdownList);
   }
-  if (alert) {
-    // TODO handle alert
+  if (githubHandles) {
+    // TODO(dabrady) does this need to be awaited?
+    requestReviews(githubHandles, githubToken);
   }
   if (comment) {
     // TODO handle comment
   }
 }
+
+// *********
 
 /**
  * Extract the workflow inputs to this GitHub Action.
@@ -77,9 +79,13 @@ function extractActionInputs() {
   // NOTE(dabrady) `getInput` will return an empty string if the input is not provided, so operation chaining is null-safe here.
   var filesToJudge = (0,core.getInput)('files-to-judge', {required: false}).split('\n').join(' ');
 
+  // NOTE(dabrady) If an alert or comment is desired in response to meaningless changes, a GitHub token is required.
+  var githubToken = (0,core.getInput)('github-token', {required: (doThisInResponse.alert || doThisInResponse.comment)});
+
   return {
     doThisInResponse,
     filesToJudge,
+    githubToken,
   };
 }
 
@@ -112,6 +118,19 @@ async function meaninglessDiff(filesToJudge, baseRef) {
 
   var meaninglessChanges = stdout ? stdout.split('\n') : [];
   return meaninglessChanges;
+}
+
+async function requestReviews(githubHandles, githubToken) {
+  var octokit = (0,github.getOctokit)(githubToken);
+  var {
+    pull_request: { number },
+    repository: { full_name: fullName }
+  } = github.context.payload;
+  console.log(number, fullName);
+  console.log(github.context.payload.pull_request.owner);
+  // await octokit.rest.pulls.requestReviewers({
+
+  // })
 }
 
 // CONCATENATED MODULE: ./index.js
