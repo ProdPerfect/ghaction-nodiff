@@ -28,7 +28,7 @@ async function nodiff() {
     throw new TypeError(`Sorry, this action isn't designed for '${github.context.eventName}' events.`);
   }
 
-  var { /* doThis, */ filesToJudge } = parseInputs();
+  var { doThisInResponse,  filesToJudge } = extractActionInputs();
   var {
     base: { ref: baseRef }
   } = github.context.payload.pull_request; // NOTE(dabrady) Guaranteed to be there for `pull_request` events
@@ -38,25 +38,29 @@ async function nodiff() {
   (0,core.setOutput)('filesAsMarkdownList', filesAsMarkdownList);
 }
 
-function parseInputs() {
+/**
+ * Extract the workflow inputs to this GitHub Action.
+ * Inputs and their defaults (if any) are defined in the action schema, `action.yml`.
+ */
+function extractActionInputs() {
   try {
-    var doThis = {
-      comment: null,
-      alert: null,
-      fail: true,
-      ...JSON.parse((0,core.getInput)('do-this-in-response', {required: false}) || "{}")
-    };
+    var doThisInResponse = JSON.parse((0,core.getInput)('do-this-in-response', {required: false}));
   } catch (syntaxError) {
     throw new SyntaxError('`do-this-in-response` must be valid JSON, please correct your config');
   }
 
+  // NOTE(dabrady) `getInput` will return an empty string if the input is not provided, so operation chaining is null-safe here.
+  var filesToJudge = (0,core.getInput)('files-to-judge', {required: false}).split('\n').join(' ');
+
   return {
-    doThis,
-    // NOTE(dabrady) `getInput` will return an empty string if the input is not provided.
-    filesToJudge: (0,core.getInput)('files-to-judge', {required: false}).split('\n').join(' '),
+    doThisInResponse,
+    filesToJudge,
   };
 }
 
+/**
+ * This function returns the set of files in this change set that have not been meaningfully changed.
+ */
 async function meaninglessDiff(filesToJudge, baseRef) {
   var meaningfulDiffCmd =
       `git diff --ignore-space-change --ignore-blank-lines --numstat origin/${baseRef} HEAD -- ${filesToJudge} | awk '{print $3}'`;
