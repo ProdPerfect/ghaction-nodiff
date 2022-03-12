@@ -63,12 +63,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
   var stderr = '';
   try {
     var exitCode = await (0,exec.exec)(
-      '/bin/bash',
-      [
-        '-c',
-        meaninglessDiffCmd
-      ],
-      null,
+      '/bin/bash', ['-c', meaninglessDiffCmd],
       {
         listeners: {
           stdout: function saveStdout(data) {
