@@ -27,15 +27,17 @@ async function nodiff() {
   if (github.context.eventName != 'pull_request') {
     throw new TypeError(`Sorry, this action isn't designed for '${github.context.eventName}' events.`);
   }
-
-  var { doThisInResponse,  filesToJudge } = extractActionInputs();
   var {
     base: { ref: baseRef }
   } = github.context.payload.pull_request; // NOTE(dabrady) Guaranteed to be there for `pull_request` events
+  var { doThisInResponse,  filesToJudge } = extractActionInputs();
 
-  var { files, filesAsMarkdownList } = await meaninglessDiff(filesToJudge, baseRef);
+  // Get the list of files that have been changed meaninglessly.
+  var files = await meaninglessDiff(filesToJudge, baseRef);
+
   (0,core.setOutput)('files', files);
-  (0,core.setOutput)('filesAsMarkdownList', filesAsMarkdownList);
+  // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
+  (0,core.setOutput)('filesAsMarkdownList', files.replace(/^/gm, '- '));
 }
 
 /**
@@ -85,10 +87,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
     throw new Error(`Something went wrong:\n${stderr}`);
   }
 
-  return {
-    files: stdout.trim(),
-    filesAsMarkdownList: stdout.trim().replace(/^/gm, '- ')
-  };
+  return stdout.trim();
 }
 
 // CONCATENATED MODULE: ./index.js

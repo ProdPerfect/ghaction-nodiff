@@ -9,15 +9,17 @@ export default async function nodiff() {
   if (context.eventName != 'pull_request') {
     throw new TypeError(`Sorry, this action isn't designed for '${context.eventName}' events.`);
   }
-
-  var { doThisInResponse,  filesToJudge } = extractActionInputs();
   var {
     base: { ref: baseRef }
   } = context.payload['pull_request']; // NOTE(dabrady) Guaranteed to be there for `pull_request` events
+  var { doThisInResponse,  filesToJudge } = extractActionInputs();
 
-  var { files, filesAsMarkdownList } = await meaninglessDiff(filesToJudge, baseRef);
+  // Get the list of files that have been changed meaninglessly.
+  var files = await meaninglessDiff(filesToJudge, baseRef);
+
   setOutput('files', files);
-  setOutput('filesAsMarkdownList', filesAsMarkdownList);
+  // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
+  setOutput('filesAsMarkdownList', files.replace(/^/gm, '- '));
 }
 
 /**
@@ -67,8 +69,5 @@ async function meaninglessDiff(filesToJudge, baseRef) {
     throw new Error(`Something went wrong:\n${stderr}`);
   }
 
-  return {
-    files: stdout.trim(),
-    filesAsMarkdownList: stdout.trim().replace(/^/gm, '- ')
-  };
+  return stdout.trim();
 }
