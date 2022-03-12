@@ -35,9 +35,9 @@ async function nodiff() {
   // Get the list of files that have been changed meaninglessly.
   var files = await meaninglessDiff(filesToJudge, baseRef);
 
-  (0,core.setOutput)('files', files);
+  (0,core.setOutput)('files', files.join(' '));
   // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
-  (0,core.setOutput)('filesAsMarkdownList', files.replace(/^/gm, '- '));
+  (0,core.setOutput)('filesAsMarkdownList', files.join('\n').replace(/^/gm, '- '));
 }
 
 /**
@@ -74,7 +74,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
     {
       listeners: {
         stdout: function saveStdout(data) {
-          stdout += data.toString();
+          stdout += data.toString().trim();
         },
         stderr: function saveStderr(data) {
           stderr += data.toString();
@@ -87,7 +87,8 @@ async function meaninglessDiff(filesToJudge, baseRef) {
     throw new Error(`Something went wrong:\n${stderr}`);
   }
 
-  return stdout.trim();
+  var meaninglessChanges = stdout.trim().split('\n');
+  return meaninglessChanges;
 }
 
 // CONCATENATED MODULE: ./index.js

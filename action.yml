@@ -64,6 +64,10 @@ outputs:
       A space-separated string of file paths, relative to the project root,
       that comprise whatever subset of the input `files-to-judge` were changed
       in meaningless ways in the event that triggered the action.
+  filesAsMarkdownList:
+    description: |
+      The same as the `files` output, but using the string "\n- " as the
+      delimeter between file paths instead of a space.
 runs:
   using: 'node12'
   main: 'dist/index.js'
