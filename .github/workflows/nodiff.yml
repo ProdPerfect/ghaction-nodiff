@@ -12,7 +12,7 @@ jobs:
         run: |
           git fetch --no-tags --prune --depth=1 origin \
               +refs/heads/${BASE}:refs/remotes/origin/${BASE}
-      - name: nodiff
+      - id: nodiff
         uses: ./
         with:
           do-this-in-response: |
