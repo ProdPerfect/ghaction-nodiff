@@ -37,8 +37,7 @@ export default async function nodiff() {
     setFailed(FAILURE_MESSAGE + filesAsMarkdownList);
   }
   if (githubHandles) {
-    // TODO(dabrady) does this need to be awaited?
-    requestReviews(githubHandles, githubToken);
+    await requestReviews(githubHandles, githubToken);
   }
   if (comment) {
     // TODO handle comment
