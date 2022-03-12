@@ -127,7 +127,7 @@ async function requestReviews(githubHandles, githubToken) {
     repository: { full_name: fullName }
   } = github.context.payload;
   console.log(number, fullName);
-  console.log(github.context.payload.pull_request.owner);
+  console.log(github.context.payload.repository);
   // await octokit.rest.pulls.requestReviewers({
 
   // })
