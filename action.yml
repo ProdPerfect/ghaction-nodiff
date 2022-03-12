@@ -40,7 +40,7 @@ inputs:
           Ex.
              "The changes you made to these files are meaningless:\n%(filesAsMarkdownList)\nDid you mean to touch them?"
           -->
-             The changes you made to these files are meaningless:
+              The changes you made to these files are meaningless:
              - foo.py
              - src/config/bar.json
              - docs/dontreadme.md
