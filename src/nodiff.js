@@ -39,7 +39,7 @@ function parseInputs() {
 }
 
 async function meaninglessDiff(filesToJudge, baseRef) {
-  var meaningfulDiffCmd = `git diff --ignore-space-change --ignore-blank-lines --numstat origin/${baseRef} HEAD -- ${filesToJudge} | awk "{print \$3}"`;
+  var meaningfulDiffCmd = `git diff --ignore-space-change --ignore-blank-lines --numstat origin/${baseRef} HEAD -- ${filesToJudge} | awk \'{print $3}\'`;
   var meaninglessDiffCmd = `comm -23 <(git diff --name-only origin/${baseRef} HEAD -- ${filesToJudge}) <(${meaningfulDiffCmd})`;
   var stdout = '';
   var stderr = '';
