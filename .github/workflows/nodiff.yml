@@ -6,7 +6,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - id: nodiff
+      - name: Fetch base branch
+        env:
+          BASE: ${{ github['base_ref'] }}
+        run: |
+          git fetch --no-tags --prune --depth=1 origin \
+              +refs/heads/${BASE}:refs/remotes/origin/${BASE}
+      - name: nodiff
         uses: ./
         with:
           do-this-in-response: |
