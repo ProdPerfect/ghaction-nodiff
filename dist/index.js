@@ -23,6 +23,8 @@ var github = __nccwpck_require__(5438);
 // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
 process.on('uncaughtException', core.setFailed);
 
+const FAILURE_MESSAGE = `You made meaningless changes to:\n`;
+
 async function nodiff() {
   if (github.context.eventName != 'pull_request') {
     throw new TypeError(`Sorry, this action isn't designed for '${github.context.eventName}' events.`);
@@ -34,10 +36,31 @@ async function nodiff() {
 
   // Get the list of files that have been changed meaninglessly.
   var files = await meaninglessDiff(filesToJudge, baseRef);
+  if (files.length <= 0) {
+    // Hurray, no meaningless changes.
+    return;
+  }
 
-  (0,core.setOutput)('files', files.join(' '));
+  // Set the outputs.
+
+  var filesAsSpaceSeparatedList = files.join(' ');
   // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
-  (0,core.setOutput)('filesAsMarkdownList', files.join('\n').replace(/^/gm, '- '));
+  var filesAsMarkdownList = files.join('\n').replace(/^/gm, '- ');
+
+  (0,core.setOutput)('files', filesAsSpaceSeparatedList);
+  (0,core.setOutput)('filesAsMarkdownList', filesAsMarkdownList);
+
+  // Any or all of these may be provided.
+  var { alert, comment, fail } = doThisInResponse;
+  if (fail) {
+    (0,core.setFailed)(FAILURE_MESSAGE + filesAsMarkdownList);
+  }
+  if (alert) {
+    // TODO handle alert
+  }
+  if (comment) {
+    // TODO handle comment
+  }
 }
 
 /**
@@ -87,7 +110,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
     throw new Error(`Something went wrong:\n${stderr}`);
   }
 
-  var meaninglessChanges = stdout.trim().split('\n');
+  var meaninglessChanges = stdout ? stdout.split('\n') : [];
   return meaninglessChanges;
 }
 

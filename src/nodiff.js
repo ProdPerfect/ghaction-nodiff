@@ -5,6 +5,8 @@ import { context } from '@actions/github';
 // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
 process.on('uncaughtException', setFailed);
 
+const FAILURE_MESSAGE = `You made meaningless changes to:\n`;
+
 export default async function nodiff() {
   if (context.eventName != 'pull_request') {
     throw new TypeError(`Sorry, this action isn't designed for '${context.eventName}' events.`);
@@ -16,10 +18,31 @@ export default async function nodiff() {
 
   // Get the list of files that have been changed meaninglessly.
   var files = await meaninglessDiff(filesToJudge, baseRef);
+  if (files.length <= 0) {
+    // Hurray, no meaningless changes.
+    return;
+  }
 
-  setOutput('files', files.join(' '));
+  // Set the outputs.
+
+  var filesAsSpaceSeparatedList = files.join(' ');
   // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
-  setOutput('filesAsMarkdownList', files.join('\n').replace(/^/gm, '- '));
+  var filesAsMarkdownList = files.join('\n').replace(/^/gm, '- ');
+
+  setOutput('files', filesAsSpaceSeparatedList);
+  setOutput('filesAsMarkdownList', filesAsMarkdownList);
+
+  // Any or all of these may be provided.
+  var { alert, comment, fail } = doThisInResponse;
+  if (fail) {
+    setFailed(FAILURE_MESSAGE + filesAsMarkdownList);
+  }
+  if (alert) {
+    // TODO handle alert
+  }
+  if (comment) {
+    // TODO handle comment
+  }
 }
 
 /**
@@ -69,6 +92,6 @@ async function meaninglessDiff(filesToJudge, baseRef) {
     throw new Error(`Something went wrong:\n${stderr}`);
   }
 
-  var meaninglessChanges = stdout.trim().split('\n');
+  var meaninglessChanges = stdout ? stdout.split('\n') : [];
   return meaninglessChanges;
 }
