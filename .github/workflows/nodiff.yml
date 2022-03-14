@@ -19,6 +19,6 @@ jobs:
           do-this-in-response: |
             {
               "requestReviewers": ["dabrady", "devtools-p2"],
-              "comment": "You made meaningless changes to these:\n%{filesAsMarkdownList}\nEnsure you're leaving the code better than you found it!",
+              "comment": "You made meaningless changes to these:\n%{filesAsMarkdownList}\n\nEnsure you're leaving the code better than you found it!",
               "fail": true
             }
