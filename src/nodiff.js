@@ -32,7 +32,7 @@ export default async function nodiff({
 }) {
   // NOTE(dabrady) This prevents consumers from needing to do this themselves.
   // We need to fetch the base to do a proper diff.
-  await fetchBaseGitRef(baseGitRef);
+  await fetchGitRef(baseGitRef);
 
   // Get the list of files that have been changed meaninglessly.
   var fileList = await meaninglessDiff(filesToJudge, baseGitRef);
@@ -71,10 +71,13 @@ export default async function nodiff({
 
 // *********
 
-async function fetchBaseGitRef(baseRef) {
+/**
+ * Fetches the given git ref for later comparison.
+ */
+async function fetchGitRef(ref) {
   var stderr = '';
   var exitCode = await exec(
-    `git fetch --no-tags --prune --depth=1 origin +refs/heads/${baseRef}:refs/remotes/origin/${baseRef}`,
+    `git fetch --no-tags --prune --depth=1 origin +refs/heads/${ref}:refs/remotes/origin/${ref}`,
     null,
     {
       listeners: {
@@ -87,6 +90,7 @@ async function fetchBaseGitRef(baseRef) {
   if (exitCode != 0) {
     throw new Error(`Something went wrong:\n${stderr}`);
   }
+  return true;
 }
 
 /**
@@ -101,7 +105,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
   var exitCode = await exec(
     '/bin/bash', ['-c', meaninglessDiffCmd],
     {
-      //silent: !isDebug(), // Suppress log output unless running in debug mode
+      silent: !isDebug(), // Suppress log output unless running in debug mode
       listeners: {
         stdout: function saveStdout(data) {
           stdout += data.toString().trim();
