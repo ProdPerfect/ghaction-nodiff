@@ -1,9 +1,9 @@
 # GitHub Action: `nodiff`
 This action lets you react when no meaningful changes are made within a given change set.
 
-Currently, a 'meaningless' change is defined in terms of whitespace, but it can be extended later. It can be configured to monitor **all** or **any** of a set of files in the project, and by default it simply fails if the given change set makes 'no difference' to the codebase.
+Currently, a 'meaningless' change is defined in terms of whitespace, but it can be extended later. It can be configured to monitor an entire project or a set of files within it, and by default it simply fails if the given change set makes 'no difference' to the codebase.
 
-You can also configure it to react with one or more of a small set of predefined and slightly configurable actions, such as pinging someone, leaving a comment, or adding a label.
+You can also configure it to react with one or more of a small set of predefined and slightly configurable actions, such as requesting a review from someone, leaving a comment, or requesting changes.
 
 # What's new
 
@@ -39,7 +39,8 @@ You can also configure it to react with one or more of a small set of predefined
     # specified but not applicable to an event, it has no effect.
     do-this-in-response: |
     {
-      # If provided, this comment will be left on the PR.
+      # If provided, a review will be submitted with this comment.
+      # If `fail` is also specified, the review will request changes.
       #
       # The following patterns are interpolated:
       #   `%(files)`
@@ -60,17 +61,17 @@ You can also configure it to react with one or more of a small set of predefined
       # Default: <none>
       "comment": "Hey, make sure you leave the code better than you found it!",
 
-      # If provided, these users/aliases will be pinged in a comment.
-      # These will be combined with any given `comment` or otherwise
-      # given a comment of their own.
+      # If provided, these users/aliases will be requested to leave a review.
       # Default: <none>
-      "alert": [
+      "requestReviewers": [
         "@dabrady",
         "@MyCompany/moderators"
       ],
 
       # If provided, this action will fail if no meaningful changes to the
-      # monitored are detected.
+      # monitored files are detected.
+      # If provided in conjunction with `comment`, the submitted review will
+      # request changes, not just leave a comment.
       # Default: true
       "fail": true
     }

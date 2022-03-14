@@ -3,7 +3,7 @@ description: 'React to meaningless file changes.'
 inputs:
   files-to-judge:
     description: |
-      Space-separated list of files to judge. Globs are supported.
+      Optional space-separated list of files to judge. Globs are supported.
       @see https://github.com/actions/toolkit/tree/main/packages/glob#patterns
       for details on supported patterns.
 
@@ -28,7 +28,8 @@ inputs:
 
       Supported reactions:
         - `comment` (string)
-          If provided, this comment will be left on the PR.
+          If provided, a review will be submitted with this comment.
+          If `fail` is also specified, the review will request changes.
 
           The following patterns are interpolated:
             `%(files)`
@@ -47,14 +48,14 @@ inputs:
              Did you intend to touch them?
 
         - `alert` (array of strings)
-          If provided, these users/aliases will be pinged in a comment. These
-          will be combined with any given `comment` or otherwise
-          given a comment of their own.
+          If provided, these users/aliases will be requested to leave a review.
 
         - `fail` (boolean)
           Default: true
           If provided, this action will fail if no meaningful changes to the
-          monitored are detected.
+          monitored files are detected.
+          If `comment` is also specfied, the submitted review will request
+          changes, not just leave a comment.
     required: false
     default: |
       { "fail": true }

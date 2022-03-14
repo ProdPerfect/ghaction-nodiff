@@ -1,4 +1,5 @@
-import { isDebug, setFailed } from '@actions/core';
+import { getInput, isDebug, setFailed, setOutput } from '@actions/core';
+import { context } from '@actions/github';
 import nodiff from './src/nodiff';
 
 // NOTE(dabrady) This graceful failure eliminates stack traces and error context from this action's output, but that info
@@ -9,5 +10,43 @@ if (!isDebug()) {
   process.on('unhandledRejection', setFailed);
 }
 
-// TODO(dabrady) pull up input & output mgmt
-nodiff();
+// Safeguard against unsupported events.
+if (context.eventName != 'pull_request') {
+  throw new TypeError(`Sorry, this action isn't designed for '${context.eventName}' events.`);
+}
+
+// Do the thing.
+nodiff({
+  ...extractActionInputs(),
+  baseGitRef: context.payload['pull_request'].base.ref,
+  actionPayload: context.payload
+}).then(function setOutputs(outputs) {
+  if (!outputs) return;
+
+  for (let key in outputs) {
+    setOutput(key, outputs[key]);
+  }
+}).catch(setFailed);
+
+// ********
+
+/**
+ * Extract the workflow inputs to this GitHub Action.
+ * Inputs and their defaults (if any) are defined in the action schema, `action.yml`.
+ */
+function extractActionInputs() {
+  try {
+    var doThisInResponse = JSON.parse(getInput('do-this-in-response', {required: false}));
+  } catch (syntaxError) {
+    throw new SyntaxError('`do-this-in-response` must be valid JSON, please correct your workflow config');
+  }
+
+  // NOTE(dabrady) `getInput` will return an empty string if the input is not provided, so operation chaining is null-safe here.
+  var filesToJudge = getInput('files-to-judge', {required: false}).split('\n').join(' ');
+  var githubToken = getInput('github-token', {
+    // NOTE(dabrady) If review requests or leaving a comment are desired in response to meaningless changes, a GitHub token is required.
+    required: (doThisInResponse.requestReviewers || doThisInResponse.comment)
+  });
+
+  return { doThisInResponse, filesToJudge, githubToken };
+}
