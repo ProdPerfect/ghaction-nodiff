@@ -203,6 +203,7 @@ async function submitReview(comment, githubToken, { action = 'COMMENT' }) {
 if (!(0,core.isDebug)()) {
   // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
   process.on('uncaughtException', core.setFailed);
+  process.on('unhandledRejection', core.setFailed);
 }
 
 // TODO(dabrady) pull up input & output mgmt

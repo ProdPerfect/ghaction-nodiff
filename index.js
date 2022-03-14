@@ -6,6 +6,7 @@ import nodiff from './src/nodiff';
 if (!isDebug()) {
   // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
   process.on('uncaughtException', setFailed);
+  process.on('unhandledRejection', setFailed);
 }
 
 // TODO(dabrady) pull up input & output mgmt
