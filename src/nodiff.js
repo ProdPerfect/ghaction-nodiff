@@ -94,8 +94,8 @@ async function fetchBaseGitRef(baseRef) {
  */
 async function meaninglessDiff(filesToJudge, baseRef) {
   var meaningfulDiffCmd =
-      `git diff --ignore-space-change --ignore-blank-lines --numstat origin/${baseRef} HEAD -- ${filesToJudge} | awk '{print $3}'`;
-  var meaninglessDiffCmd = `comm -23 <(git diff --name-only origin/${baseRef} HEAD -- ${filesToJudge}) <(${meaningfulDiffCmd})`;
+      `git diff --ignore-space-change --ignore-blank-lines --diff-filter=M --numstat origin/${baseRef} HEAD -- ${filesToJudge} | awk '{print $3}'`;
+  var meaninglessDiffCmd = `comm -23 <(git diff --diff-filter=M --name-only origin/${baseRef} HEAD -- ${filesToJudge}) <(${meaningfulDiffCmd})`;
   var stdout = '';
   var stderr = '';
   var exitCode = await exec(
