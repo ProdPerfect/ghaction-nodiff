@@ -67,7 +67,7 @@ async function requestChanges(comment, githubToken, actionPayload) {
 /**
  * Submits a review of the given kind on the pull request from whence this action originated.
  */
-async function submitReview(comment, githubToken, actionPayload, { action = 'COMMENT' }) {
+async function submitReview(comment, githubToken, actionPayload, { action } = {}) {
   var octokit = (0,github.getOctokit)(githubToken);
   var {
     pull_request: {
@@ -213,8 +213,8 @@ async function meaninglessDiff(filesToJudge, baseRef) {
 // is quite useful during debugging.
 if (!(0,core.isDebug)()) {
   // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
-  process.on('uncaughtException', core.setFailed);
-  process.on('unhandledRejection', core.setFailed);
+  // process.on('uncaughtException', setFailed);
+  // process.on('unhandledRejection', setFailed);
 }
 
 // Safeguard against unsupported events.
@@ -233,7 +233,7 @@ nodiff({
   for (let key in outputs) {
     (0,core.setOutput)(key, outputs[key]);
   }
-}).catch(core.setFailed);
+});//.catch(setFailed);
 
 // ********
 

@@ -49,7 +49,7 @@ export async function requestChanges(comment, githubToken, actionPayload) {
 /**
  * Submits a review of the given kind on the pull request from whence this action originated.
  */
-export async function submitReview(comment, githubToken, actionPayload, { action = 'COMMENT' }) {
+export async function submitReview(comment, githubToken, actionPayload, { action } = {}) {
   var octokit = getOctokit(githubToken);
   var {
     pull_request: {
