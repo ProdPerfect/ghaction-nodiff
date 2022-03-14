@@ -59,8 +59,6 @@ async function nodiff() {
   }
   if (fail) {
     (0,core.setFailed)(FAILURE_MESSAGE + filesAsMarkdownList);
-  } else {
-    setNeutral(FAILURE_MESSAGE + filesAsMarkdownList);
   }
 
   // Set the outputs.
@@ -84,8 +82,8 @@ function extractActionInputs() {
   // NOTE(dabrady) `getInput` will return an empty string if the input is not provided, so operation chaining is null-safe here.
   var filesToJudge = (0,core.getInput)('files-to-judge', {required: false}).split('\n').join(' ');
 
-  // NOTE(dabrady) If an alert or comment is desired in response to meaningless changes, a GitHub token is required.
-  var githubToken = (0,core.getInput)('github-token', {required: (doThisInResponse.alert || doThisInResponse.comment)});
+  // NOTE(dabrady) If review requests or leaving a comment are desired in response to meaningless changes, a GitHub token is required.
+  var githubToken = (0,core.getInput)('github-token', {required: (doThisInResponse.requestReviewers || doThisInResponse.comment)});
 
   return {
     doThisInResponse,
