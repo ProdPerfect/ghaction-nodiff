@@ -19,7 +19,8 @@ jobs:
           do-this-in-response: |
             {
               "requestReviewers": ["dabrady", "devtools-p2"],
-              "comment": "Yo that's no good"
+              "comment": "Yo that's no good",
+              "fail": true
             }
       - run: |
           echo '${{ steps.nodiff.outputs.files }}'
