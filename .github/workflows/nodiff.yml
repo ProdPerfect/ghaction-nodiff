@@ -1,5 +1,10 @@
-name: "nodiff"
-on: pull_request
+name: "Example usage"
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 jobs:
   nodiff:
