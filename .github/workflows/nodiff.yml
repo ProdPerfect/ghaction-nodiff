@@ -18,8 +18,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           do-this-in-response: |
             {
-              "alert": ["dabrady"],
-              "fail": true
+              "requestReviewers": ["dabrady", "devtools-p2"]
             }
       - run: |
           echo '${{ steps.nodiff.outputs.files }}'

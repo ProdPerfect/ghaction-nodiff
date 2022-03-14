@@ -1,9 +1,13 @@
-import { getInput, setOutput, setFailed } from '@actions/core';
+import { getInput, info, isDebug, setOutput, setFailed } from '@actions/core';
 import { exec } from '@actions/exec';
 import { context, getOctokit } from '@actions/github';
 
-// NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
-process.on('uncaughtException', setFailed);
+// NOTE(dabrady) This graceful failure eliminates stack traces and error context from this action's output, but that info
+// is quite useful during debugging.
+if (!isDebug()) {
+  // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
+  process.on('uncaughtException', setFailed);
+}
 
 const FAILURE_MESSAGE = `You made meaningless changes to:\n`;
 
@@ -23,25 +27,32 @@ export default async function nodiff() {
     return;
   }
 
+  // Process the results.
   var filesAsSpaceSeparatedList = files.join(' ');
   // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
   var filesAsMarkdownList = files.join('\n').replace(/^/gm, '- ');
 
-  // Set the outputs.
-  setOutput('files', filesAsSpaceSeparatedList);
-  setOutput('filesAsMarkdownList', filesAsMarkdownList);
-
   // Respond as directed. Any or all of these may be provided.
-  var { alert: githubHandles, comment, fail } = doThisInResponse;
+  var { requestReviewers: githubHandles, comment, fail } = doThisInResponse;
+  if (githubHandles) {
+    await requestReviewers(githubHandles, githubToken);
+  }
+  if (comment) {
+    // When failure is also specified, don't just leave a comment: block the review.
+    // Some other process will need to handle dismissing this: there's no good way to do it from here.
+    if (fail) {
+      await requestChanges(comment, githubToken);
+    } else {
+      await leaveComment(comment, githubToken);
+    }
+  }
   if (fail) {
     setFailed(FAILURE_MESSAGE + filesAsMarkdownList);
   }
-  if (githubHandles) {
-    await requestReviews(githubHandles, githubToken);
-  }
-  if (comment) {
-    // TODO handle comment
-  }
+
+  // Set the outputs.
+  setOutput('files', filesAsSpaceSeparatedList);
+  setOutput('filesAsMarkdownList', filesAsMarkdownList);
 }
 
 // *********
@@ -101,19 +112,71 @@ async function meaninglessDiff(filesToJudge, baseRef) {
   return meaninglessChanges;
 }
 
-async function requestReviews(githubHandles, githubToken) {
+/**
+ * Adds a given set of GitHub handles as reviewers to the pull request triggering this action.
+ */
+async function requestReviewers(githubHandles, githubToken) {
   var octokit = getOctokit(githubToken);
   var {
-    pull_request: { number: pull_number },
+    pull_request: {
+      number: pullNumber,
+      user: { login: author }
+    },
     repository: {
       name: repo,
       owner: { login: owner }
     }
   } = context.payload;
-  await octokit.rest.pulls.requestReviewers({
+
+  // GitHub doesn't allow pull request authors to review their own pull requests.
+  var reviewers = githubHandles.filter(function excludeAuthor(githubHandle) {
+    return githubHandle != author;
+  });
+
+  info(`Requesting reviews from: ${reviewers}`);
+
+  return octokit.rest.pulls.requestReviewers({
     owner,
     repo,
-    pull_number,
-    reviewers: githubHandles
+    pull_number: pullNumber,
+    reviewers
+  });
+}
+
+/**
+ * Leaves a comment on the pull request from whence this action originated.
+ */
+async function leaveComment(comment, githubToken) {
+  return submitReview(comment, githubToken, { action: 'COMMENT' });
+}
+
+/**
+ * Requests changes on the pull request from whence this action originated.
+ */
+async function requestChanges(comment, githubToken) {
+  return submitReview(comment, githubToken, { action: 'REQUEST_CHANGES' });
+}
+
+/**
+ * Submits a review of the given kind on the pull request from whence this action originated.
+ */
+async function submitReview(comment, githubToken, { action = 'COMMENT' }) {
+  var octokit = getOctokit(githubToken);
+  var {
+    pull_request: {
+      number: pullNumber
+    },
+    repository: {
+      name: repo,
+      owner: { login: owner }
+    }
+  } = context.payload;
+  return octokit.rest.pulls.createReview({
+    owner,
+    repo,
+    pull_number: pullNumber,
+    commit_id: context.sha,
+    body: comment,
+    event: action
   });
 }
