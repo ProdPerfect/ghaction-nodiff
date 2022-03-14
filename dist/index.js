@@ -238,8 +238,8 @@ async function meaninglessDiff(filesToJudge, baseRef) {
 // is quite useful during debugging.
 if (!(0,core.isDebug)()) {
   // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
-  // process.on('uncaughtException', setFailed);
-  // process.on('unhandledRejection', setFailed);
+  process.on('uncaughtException', core.setFailed);
+  process.on('unhandledRejection', core.setFailed);
 }
 
 // Safeguard against unsupported events.
@@ -258,7 +258,7 @@ nodiff({
   for (let key in outputs) {
     (0,core.setOutput)(key, outputs[key]);
   }
-});//.catch(setFailed);
+}).catch(core.setFailed);
 
 // ********
 

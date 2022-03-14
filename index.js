@@ -6,8 +6,8 @@ import nodiff from './src/nodiff';
 // is quite useful during debugging.
 if (!isDebug()) {
   // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
-  // process.on('uncaughtException', setFailed);
-  // process.on('unhandledRejection', setFailed);
+  process.on('uncaughtException', setFailed);
+  process.on('unhandledRejection', setFailed);
 }
 
 // Safeguard against unsupported events.
@@ -26,7 +26,7 @@ nodiff({
   for (let key in outputs) {
     setOutput(key, outputs[key]);
   }
-});//.catch(setFailed);
+}).catch(setFailed);
 
 // ********
 
