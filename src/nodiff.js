@@ -2,13 +2,6 @@ import { getInput, info, isDebug, setFailed, setNeutral, setOutput } from '@acti
 import { exec } from '@actions/exec';
 import { context, getOctokit } from '@actions/github';
 
-// NOTE(dabrady) This graceful failure eliminates stack traces and error context from this action's output, but that info
-// is quite useful during debugging.
-if (!isDebug()) {
-  // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
-  process.on('uncaughtException', setFailed);
-}
-
 const FAILURE_MESSAGE = `You made meaningless changes to:\n`;
 
 export default async function nodiff() {

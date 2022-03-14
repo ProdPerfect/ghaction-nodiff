@@ -20,13 +20,6 @@ var github = __nccwpck_require__(5438);
 
 
 
-// NOTE(dabrady) This graceful failure eliminates stack traces and error context from this action's output, but that info
-// is quite useful during debugging.
-if (!(0,core.isDebug)()) {
-  // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
-  process.on('uncaughtException', core.setFailed);
-}
-
 const FAILURE_MESSAGE = `You made meaningless changes to:\n`;
 
 async function nodiff() {
@@ -203,6 +196,16 @@ async function submitReview(comment, githubToken, { action = 'COMMENT' }) {
 
 // CONCATENATED MODULE: ./index.js
 
+
+
+// NOTE(dabrady) This graceful failure eliminates stack traces and error context from this action's output, but that info
+// is quite useful during debugging.
+if (!(0,core.isDebug)()) {
+  // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
+  process.on('uncaughtException', core.setFailed);
+}
+
+// TODO(dabrady) pull up input & output mgmt
 nodiff();
 
 
