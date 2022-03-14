@@ -79,14 +79,16 @@ async function submitReview(comment, githubToken, actionPayload, { action } = {}
       owner: { login: owner }
     }
   } = actionPayload;
-  return octokit.rest.pulls.createReview({
+  var reviewPayload = {
     owner,
     repo,
     pull_number: pullNumber,
     commit_id: ref,
     body: comment,
     event: action
-  });
+  };
+  console.log(reviewPayload);
+  return octokit.rest.pulls.createReview();
 }
 
 /**
