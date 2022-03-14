@@ -60,7 +60,7 @@ async function nodiff() {
   if (fail) {
     (0,core.setFailed)(FAILURE_MESSAGE + filesAsMarkdownList);
   } else {
-    (0,core.setNeutral)(FAILURE_MESSAGE + filesAsMarkdownList);
+    setNeutral(FAILURE_MESSAGE + filesAsMarkdownList);
   }
 
   // Set the outputs.
@@ -106,6 +106,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
   var exitCode = await (0,exec.exec)(
     '/bin/bash', ['-c', meaninglessDiffCmd],
     {
+      silent: !(0,core.isDebug)(), // Suppress log output unless running in debug mode
       listeners: {
         stdout: function saveStdout(data) {
           stdout += data.toString().trim();

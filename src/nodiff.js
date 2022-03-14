@@ -1,4 +1,4 @@
-import { getInput, info, isDebug, setFailed, setNeutral, setOutput } from '@actions/core';
+import { getInput, info, isDebug, setFailed, setOutput } from '@actions/core';
 import { exec } from '@actions/exec';
 import { context, getOctokit } from '@actions/github';
 
@@ -88,6 +88,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
   var exitCode = await exec(
     '/bin/bash', ['-c', meaninglessDiffCmd],
     {
+      silent: !isDebug(), // Suppress log output unless running in debug mode
       listeners: {
         stdout: function saveStdout(data) {
           stdout += data.toString().trim();
