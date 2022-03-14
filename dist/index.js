@@ -205,7 +205,7 @@ async function meaninglessDiff(filesToJudge, baseRef) {
   var exitCode = await (0,exec.exec)(
     '/bin/bash', ['-c', meaninglessDiffCmd],
     {
-      silent: !(0,core.isDebug)(), // Suppress log output unless running in debug mode
+      //silent: !isDebug(), // Suppress log output unless running in debug mode
       listeners: {
         stdout: function saveStdout(data) {
           stdout += data.toString().trim();
