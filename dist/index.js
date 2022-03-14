@@ -32,17 +32,19 @@ async function nodiff() {
   var { doThisInResponse, filesToJudge, githubToken } = extractActionInputs();
 
   // Get the list of files that have been changed meaninglessly.
-  var files = await meaninglessDiff(filesToJudge, baseRef);
-  if (files.length <= 0) {
+  var fileList = await meaninglessDiff(filesToJudge, baseRef);
+  if (fileList.length <= 0) {
     // Hurray, no meaningless changes.
     return;
   }
 
   // Process the results.
-  var filesAsSpaceSeparatedList = files.join(' ');
-  // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
-  var filesAsMarkdownList = files.join('\n').replace(/^/gm, '- ');
-  (0,core.info)(FAILURE_MESSAGE + filesAsMarkdownList);
+  var outputs = {
+    files: fileList.join(' '),
+    // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
+    filesAsMarkdownList: fileList.join('\n').replace(/^/gm, '- ')
+  };
+  (0,core.info)(FAILURE_MESSAGE + outputs.files);
 
   // Respond as directed. Any or all of these may be provided.
   var { requestReviewers: githubHandles, comment, fail } = doThisInResponse;
@@ -50,21 +52,23 @@ async function nodiff() {
     await requestReviewers(githubHandles, githubToken);
   }
   if (comment) {
+    var hydratedComment = hydrateTemplateString(comment, outputs);
     // When failure is also specified, don't just leave a comment: block the review.
     // Some other process will need to handle dismissing this: there's no good way to do it from here.
     if (fail) {
-      await requestChanges(comment, githubToken);
+      await requestChanges(hydratedComment, githubToken);
     } else {
-      await leaveComment(comment, githubToken);
+      await leaveComment(hydratedComment, githubToken);
     }
   }
   if (fail) {
-    (0,core.setFailed)(FAILURE_MESSAGE + filesAsMarkdownList);
+    (0,core.setFailed)(FAILURE_MESSAGE + outputs.filesAsMarkdownList);
   }
 
   // Set the outputs.
-  (0,core.setOutput)('files', filesAsSpaceSeparatedList);
-  (0,core.setOutput)('filesAsMarkdownList', filesAsMarkdownList);
+  for (let output in outputs) {
+    (0,core.setOutput)(output, outputs[output]);
+  }
 }
 
 // *********
@@ -191,6 +195,23 @@ async function submitReview(comment, githubToken, { action = 'COMMENT' }) {
     commit_id: github.context.sha,
     body: comment,
     event: action
+  });
+}
+
+/**
+ * Does a simple find-and-replace on a string, replacing placeholders with their specified values if found.
+ * The current placeholder pattern is like this: %{a_string_of_wordCharacters}
+ * E.g.
+ *     hydrateTemplateString(
+ *         "Today is %{today}, but tomorrow is actually the day after %{today}, which is %{tomorrow}.",
+ *         { today: 'Tuesday', tomorrow: 'Wednesday' }
+ *     )
+ *     // -> "Today is Tuesday, but tomorrow is actually the day after Tuesday, which is Wednesday."
+ */
+function hydrateTemplateString(string, templateVariables = {}) {
+  var PLACEHOLDER_PATTERN = /%{(\w+)}/;
+  return string.replace(PLACEHOLDER_PATTERN, function replaceTemplateVariable(fullMatch, templateVariable) {
+    return templateVariable in templateVariables ? templateVariables[templateVariable] : fullMatch;
   });
 }
 

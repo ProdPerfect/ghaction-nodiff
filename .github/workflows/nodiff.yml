@@ -19,10 +19,6 @@ jobs:
           do-this-in-response: |
             {
               "requestReviewers": ["dabrady", "devtools-p2"],
-              "comment": "Yo that's no good",
+              "comment": "You made meaningless changes to these:\n%{filesAsMarkdownList}\nEnsure you're leaving the code better than you found it!",
               "fail": true
             }
-      - run: |
-          echo '${{ steps.nodiff.outputs.files }}'
-          echo -e "You made meaningless changes to:\n${{ steps.nodiff.outputs.filesAsMarkdownList }}"
-        shell: bash
