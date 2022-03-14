@@ -66,6 +66,8 @@ async function nodiff() {
   }
   if (fail) {
     (0,core.setFailed)(FAILURE_MESSAGE + filesAsMarkdownList);
+  } else {
+    (0,core.setNeutral)(FAILURE_MESSAGE + filesAsMarkdownList);
   }
 
   // Set the outputs.

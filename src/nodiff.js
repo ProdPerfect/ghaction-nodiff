@@ -1,4 +1,4 @@
-import { getInput, info, isDebug, setOutput, setFailed } from '@actions/core';
+import { getInput, info, isDebug, setFailed, setNeutral, setOutput } from '@actions/core';
 import { exec } from '@actions/exec';
 import { context, getOctokit } from '@actions/github';
 
@@ -48,6 +48,8 @@ export default async function nodiff() {
   }
   if (fail) {
     setFailed(FAILURE_MESSAGE + filesAsMarkdownList);
+  } else {
+    setNeutral(FAILURE_MESSAGE + filesAsMarkdownList);
   }
 
   // Set the outputs.
