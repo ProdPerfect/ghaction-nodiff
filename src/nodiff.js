@@ -2,7 +2,7 @@ import { getInput, info, isDebug, setFailed, setOutput } from '@actions/core';
 import { exec } from '@actions/exec';
 import { context, getOctokit } from '@actions/github';
 
-const FAILURE_MESSAGE = `You made meaningless changes to:\n`;
+const FAILURE_MESSAGE = `Meaningless changes have been made to:\n`;
 
 export default async function nodiff() {
   if (context.eventName != 'pull_request') {
@@ -24,6 +24,7 @@ export default async function nodiff() {
   var filesAsSpaceSeparatedList = files.join(' ');
   // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
   var filesAsMarkdownList = files.join('\n').replace(/^/gm, '- ');
+  info(FAILURE_MESSAGE + filesAsMarkdownList);
 
   // Respond as directed. Any or all of these may be provided.
   var { requestReviewers: githubHandles, comment, fail } = doThisInResponse;

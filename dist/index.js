@@ -20,7 +20,7 @@ var github = __nccwpck_require__(5438);
 
 
 
-const FAILURE_MESSAGE = `You made meaningless changes to:\n`;
+const FAILURE_MESSAGE = `Meaningless changes have been made to:\n`;
 
 async function nodiff() {
   if (github.context.eventName != 'pull_request') {
@@ -42,6 +42,7 @@ async function nodiff() {
   var filesAsSpaceSeparatedList = files.join(' ');
   // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
   var filesAsMarkdownList = files.join('\n').replace(/^/gm, '- ');
+  (0,core.info)(FAILURE_MESSAGE + filesAsMarkdownList);
 
   // Respond as directed. Any or all of these may be provided.
   var { requestReviewers: githubHandles, comment, fail } = doThisInResponse;
