@@ -2,7 +2,7 @@ require('./sourcemap-register.js');module.exports =
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 5804:
+/***/ 3969:
 /***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
 
 "use strict";
@@ -11,89 +11,277 @@ __nccwpck_require__.r(__webpack_exports__);
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(2186);
-// EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
-var exec = __nccwpck_require__(1514);
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var github = __nccwpck_require__(5438);
+// EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
+var exec = __nccwpck_require__(1514);
+// CONCATENATED MODULE: ./src/helpers.js
+
+
+
+/**
+ * Adds a given set of GitHub handles as reviewers to the pull request triggering this action.
+ */
+async function requestReviewers(githubHandles, githubToken, actionPayload) {
+  var octokit = (0,github.getOctokit)(githubToken);
+  var {
+    pull_request: {
+      number: pullNumber,
+      user: { login: author }
+    },
+    repository: {
+      name: repo,
+      owner: { login: owner }
+    }
+  } = actionPayload;
+
+  // GitHub doesn't allow pull request authors to review their own pull requests.
+  var reviewers = githubHandles.filter(function excludeAuthor(githubHandle) {
+    return githubHandle != author;
+  });
+
+  (0,core.info)(`Requesting reviews from: ${reviewers}`);
+
+  return octokit.rest.pulls.requestReviewers({
+    owner,
+    repo,
+    pull_number: pullNumber,
+    reviewers
+  });
+}
+
+/**
+ * Leaves a comment on the pull request from whence this action originated.
+ */
+async function leaveComment(comment, githubToken, actionPayload) {
+  return submitReview(comment, githubToken, actionPayload, { action: 'COMMENT' });
+}
+
+/**
+ * Requests changes on the pull request from whence this action originated.
+ */
+async function requestChanges(comment, githubToken, actionPayload) {
+  return submitReview(comment, githubToken, actionPayload, { action: 'REQUEST_CHANGES' });
+}
+
+/**
+ * Submits a review of the given kind on the pull request from whence this action originated.
+ */
+async function submitReview(comment, githubToken, actionPayload, { action } = {}) {
+  var octokit = (0,github.getOctokit)(githubToken);
+  var {
+    pull_request: {
+      number: pullNumber,
+      head: { sha }
+    },
+    repository: {
+      name: repo,
+      owner: { login: owner }
+    }
+  } = actionPayload;
+  return octokit.rest.pulls.createReview({
+    owner,
+    repo,
+    pull_number: pullNumber,
+    commit_id: sha,
+    body: comment,
+    event: action
+  });
+}
+
+/**
+ * Does a simple find-and-replace on a string, replacing placeholders with their specified values if found.
+ * The current placeholder pattern is like this: %{a_string_of_wordCharacters}
+ * E.g.
+ *     hydrateTemplateString(
+ *         "Today is %{today}, but tomorrow is actually the day after %{today}, which is %{tomorrow}.",
+ *         { today: 'Tuesday', tomorrow: 'Wednesday' }
+ *     )
+ *     // -> "Today is Tuesday, but tomorrow is actually the day after Tuesday, which is Wednesday."
+ */
+function hydrateTemplateString(string, templateVariables = {}) {
+  var PLACEHOLDER_PATTERN = /%{(\w+)}/;
+  return string.replace(PLACEHOLDER_PATTERN, function replaceTemplateVariable(fullMatch, templateVariable) {
+    return (templateVariable in templateVariables) ? templateVariables[templateVariable] : fullMatch;
+  });
+}
+
 // CONCATENATED MODULE: ./src/nodiff.js
 
 
 
 
-async function nodiff() {
-  console.log(github.context); // TODO delete
-  if (github.context.eventName != 'pull_request') {
-    return (0,core.setFailed)(`Sorry, this action isn't designed for '${github.context.eventName}' events.`);
+const FAILURE_MESSAGE = `Meaningless changes have been made to:\n`;
+
+/**
+ * This action lets you react when no meaningful changes are made within a given change set.
+ *
+ * Currently, a 'meaningless' change is defined in terms of whitespace, but it can be extended later. It can be
+ * configured to monitor an entire project or a set of files within it, and by default it simply fails if the given
+ * change set makes 'no difference' to the codebase.
+ *
+ * You can also configure it to react with one or more of a small set of predefined and slightly configurable actions,
+ * such as requesting a review from someone, leaving a comment, or requesting changes.
+ */
+async function nodiff({
+  filesToJudge,
+  baseGitRef,
+  doThisInResponse: {
+    requestReviewers: githubHandles,
+    comment,
+    fail
+  },
+  actionPayload,
+  githubToken
+}) {
+  // NOTE(dabrady) This prevents consumers from needing to do this themselves.
+  // We need to fetch the base to do a proper diff.
+  await fetchGitRef(baseGitRef);
+
+  // Get the list of files that have been changed meaninglessly.
+  var fileList = await meaninglessDiff(filesToJudge, baseGitRef);
+  if (fileList.length <= 0) {
+    // Hurray, no meaningless changes.
+    return null;
   }
 
-  var { doThis, filesToJudge } = parseInputs();
-  var {
-    base: { ref: baseRef }
-  } = github.context.payload[github.context.eventName];
-
-  var { files, filesAsMarkdownList } = await meaninglessDiff(filesToJudge, baseRef);
-  (0,core.setOutput)('files', files);
-  (0,core.setOutput)('filesAsMarkdownList', filesAsMarkdownList);
-}
-
-function parseInputs() {
-  try {
-    var doThis = {
-      comment: null,
-      alert: null,
-      fail: true,
-    };
-  } catch (syntaxError) {
-    (0,core.setFailed)('`do-this-in-response` must be valid JSON, please correct your config');
-    return process.exit();
-  }
-
-  return {
-    doThis,
-    // NOTE(dabrady) `getInput` will return an empty string if the input is not provided.
-    filesToJudge: (0,core.getInput)('files-to-judge', {required: false}).split('\n').join(' '),
+  // Process the results.
+  var outputs = {
+    files: fileList.join(' '),
+    // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
+    filesAsMarkdownList: fileList.join('\n').replace(/^/gm, '- ')
   };
+  (0,core.info)(FAILURE_MESSAGE + outputs.files);
+
+  // Respond as directed. Any or all of these may be provided.
+  if (githubHandles) {
+    await requestReviewers(githubHandles, githubToken, actionPayload);
+  }
+  if (comment) {
+    // When failure is also specified, don't just leave a comment: block the review.
+    // Some other process will need to handle dismissing this: there's no good way to do it from here.
+    await (fail ? requestChanges : leaveComment)(
+      hydrateTemplateString(comment, outputs),
+      githubToken,
+      actionPayload
+    );
+  }
+  if (fail) {
+    (0,core.setFailed)(FAILURE_MESSAGE + outputs.filesAsMarkdownList);
+  }
+
+  return outputs;
 }
 
+// *********
+
+/**
+ * Fetches the given git ref for later comparison.
+ */
+async function fetchGitRef(ref) {
+  var stderr = '';
+  var exitCode = await (0,exec.exec)(
+    `git fetch --no-tags --prune --depth=1 origin +refs/heads/${ref}:refs/remotes/origin/${ref}`,
+    null,
+    {
+      listeners: {
+        stderr: function saveStderr(data) {
+          stderr += data.toString();
+        },
+      }
+    }
+  );
+  if (exitCode != 0) {
+    throw new Error(`Something went wrong:\n${stderr}`);
+  }
+  return true;
+}
+
+/**
+ * This function returns the set of files in this change set that have not been meaningfully changed.
+ */
 async function meaninglessDiff(filesToJudge, baseRef) {
-  var meaningfulDiffCmd = `git diff --ignore-space-change --ignore-blank-lines --numstat -- ${filesToJudge} | awk '{print $3}'`;
-  var meaninglessDiffCmd = `comm -23 <(git diff --name-only ${baseRef} -- ${filesToJudge}) <(${meaningfulDiffCmd})`;
+  var meaningfulDiffCmd =
+      `git diff --ignore-space-change --ignore-blank-lines --diff-filter=M --numstat origin/${baseRef} HEAD -- ${filesToJudge} | awk '{print $3}'`;
+  var meaninglessDiffCmd = `comm -23 <(git diff --diff-filter=M --name-only origin/${baseRef} HEAD -- ${filesToJudge}) <(${meaningfulDiffCmd})`;
   var stdout = '';
   var stderr = '';
-  try {
-    var exitCode = await (0,exec.exec)(
-      `bash -c "${meaninglessDiffCmd}"`,
-      null,
-      {
-        listeners: {
-          stdout: function saveStdout(data) {
-            stdout += data.toString();
-          },
-          stderr: function saveStderr(data) {
-            stderr += data.toString();
-          },
-        }
+  var exitCode = await (0,exec.exec)(
+    '/bin/bash', ['-c', meaninglessDiffCmd],
+    {
+      silent: !(0,core.isDebug)(), // Suppress log output unless running in debug mode
+      listeners: {
+        stdout: function saveStdout(data) {
+          stdout += data.toString().trim();
+        },
+        stderr: function saveStderr(data) {
+          stderr += data.toString();
+        },
       }
-    );
-  } catch (error) {
-    (0,core.setFailed)(error);
-    return process.exit();
-  } finally {
-    if (exitCode != 0) {
-      (0,core.setFailed)(`Something went wrong:\n${stderr}`);
-      return process.exit();
     }
+  );
+
+  if (exitCode != 0) {
+    throw new Error(`Something went wrong:\n${stderr}`);
   }
 
-  return {
-    files: stdout.trim(),
-    filesAsMarkdownList: stdout.trim().replace(/^/gm, '- ')
-  };
+  var meaninglessChanges = stdout ? stdout.split('\n') : [];
+  return meaninglessChanges;
 }
 
 // CONCATENATED MODULE: ./index.js
 
-nodiff();
+
+
+
+// NOTE(dabrady) This graceful failure eliminates stack traces and error context from this action's output, but that info
+// is quite useful during debugging.
+if (!(0,core.isDebug)()) {
+  // NOTE(dabrady) Make sure that we fail gracefully on any uncaught error.
+  process.on('uncaughtException', core.setFailed);
+  process.on('unhandledRejection', core.setFailed);
+}
+
+// Safeguard against unsupported events.
+if (github.context.eventName != 'pull_request') {
+  throw new TypeError(`Sorry, this action isn't designed for '${github.context.eventName}' events.`);
+}
+
+// Do the thing.
+nodiff({
+  ...extractActionInputs(),
+  baseGitRef: github.context.payload.pull_request.base.ref,
+  actionPayload: github.context.payload
+}).then(function setOutputs(outputs) {
+  if (!outputs) return;
+
+  for (let key in outputs) {
+    (0,core.setOutput)(key, outputs[key]);
+  }
+}).catch(core.setFailed);
+
+// ********
+
+/**
+ * Extract the workflow inputs to this GitHub Action.
+ * Inputs and their defaults (if any) are defined in the action schema, `action.yml`.
+ */
+function extractActionInputs() {
+  try {
+    var doThisInResponse = JSON.parse((0,core.getInput)('do-this-in-response', {required: false}));
+  } catch (syntaxError) {
+    throw new SyntaxError('`do-this-in-response` must be valid JSON, please correct your workflow config');
+  }
+
+  // NOTE(dabrady) `getInput` will return an empty string if the input is not provided, so operation chaining is null-safe here.
+  var filesToJudge = (0,core.getInput)('files-to-judge', {required: false}).split('\n').join(' ');
+  var githubToken = (0,core.getInput)('github-token', {
+    // NOTE(dabrady) If review requests or leaving a comment are desired in response to meaningless changes, a GitHub token is required.
+    required: (doThisInResponse.requestReviewers || doThisInResponse.comment)
+  });
+
+  return { doThisInResponse, filesToJudge, githubToken };
+}
 
 
 /***/ }),
@@ -9910,7 +10098,7 @@ module.exports = require("zlib");;
 /******/ 	// module exports must be returned from runtime so entry inlining is disabled
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
-/******/ 	return __nccwpck_require__(5804);
+/******/ 	return __nccwpck_require__(3969);
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map
