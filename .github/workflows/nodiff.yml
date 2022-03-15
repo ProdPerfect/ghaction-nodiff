@@ -1,5 +1,10 @@
-name: "nodiff"
-on: [pull_request, push]
+name: "Example usage"
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 jobs:
   nodiff:
@@ -9,8 +14,10 @@ jobs:
       - id: nodiff
         uses: ./
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           do-this-in-response: |
-            { "fail": false }
-      - run: |
-          echo -e "You made meaningless changes to:\n${{ steps.nodiff.outputs.filesAsMarkdownList }}"
-        shell: bash
+            {
+              "requestReviewers": ["dabrady", "devtools-p2"],
+              "comment": "You made meaningless changes to these:\n%{filesAsMarkdownList}\n\nEnsure you're leaving the code better than you found it!",
+              "fail": true
+            }
