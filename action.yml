@@ -3,7 +3,7 @@ description: 'React to meaningless file changes.'
 inputs:
   files-to-judge:
     description: |
-      Space-separated list of files to judge. Globs are supported.
+      Optional space-separated list of files to judge. Globs are supported.
       @see https://github.com/actions/toolkit/tree/main/packages/glob#patterns
       for details on supported patterns.
 
@@ -28,7 +28,8 @@ inputs:
 
       Supported reactions:
         - `comment` (string)
-          If provided, this comment will be left on the PR.
+          If provided, a review will be submitted with this comment.
+          If `fail` is also specified, the review will request changes.
 
           The following patterns are interpolated:
             `%(files)`
@@ -47,23 +48,34 @@ inputs:
              Did you intend to touch them?
 
         - `alert` (array of strings)
-          If provided, these users/aliases will be pinged in a comment. These
-          will be combined with any given `comment` or otherwise
-          given a comment of their own.
+          If provided, these users/aliases will be requested to leave a review.
 
         - `fail` (boolean)
           Default: true
           If provided, this action will fail if no meaningful changes to the
-          monitored are detected.
+          monitored files are detected.
+          If `comment` is also specfied, the submitted review will request
+          changes, not just leave a comment.
     required: false
     default: |
       { "fail": true }
+  github-token:
+    description: |
+      A properly provisioned access token required when you wish to request
+      reviewers or comment on the associated pull request.
+      This can simply be the `secrets.GITHUB_TOKEN` implicitly provided to your
+      GitHub Workflow.
+    required: true
 outputs:
   files:
     description: |
       A space-separated string of file paths, relative to the project root,
       that comprise whatever subset of the input `files-to-judge` were changed
       in meaningless ways in the event that triggered the action.
+  filesAsMarkdownList:
+    description: |
+      The same as the `files` output, but using the string "\n- " as the
+      delimeter between file paths instead of a space.
 runs:
   using: 'node12'
   main: 'dist/index.js'
