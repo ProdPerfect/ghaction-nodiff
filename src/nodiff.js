@@ -22,7 +22,7 @@ const FAILURE_MESSAGE = `Meaningless changes have been made to:\n`;
 export default async function nodiff({
   filesToJudge,
   baseGitRef,
-  doThisInResponse: {
+  respondWith: {
     requestReviewers: githubHandles,
     comment,
     fail

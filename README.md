@@ -37,7 +37,7 @@ You can also configure it to react with one or more of a small set of predefined
     # NOTE: Many of these reactions are only applicable to `pull-request`
     # events, but some, like `fail`, are event-agnostic. If a reaction is
     # specified but not applicable to an event, it has no effect.
-    do-this-in-response: |
+    respond-with: |
     {
       # If provided, a review will be submitted with this comment.
       # If `fail` is also specified, the review will request changes.
@@ -114,7 +114,7 @@ steps:
   - id: nodiff
     uses: ProdPerfect/ghaction-nodiff@v1.0
     with:
-      do-this-in-response: |
+      respond-with: |
         { "fail": false }
   - run: |
       echo "You made meaningless changes to: ${{ steps.nodiff.outputs.files }}"
@@ -131,7 +131,7 @@ steps:
       src/config.js
       docs/**
       src/modules/frobnicate/a-magic-file.js
-    do-this-in-response: |
+    respond-with: |
     {
       "comment": "Something about this is sus. Pinging some people who might be interested in these changes.",
       "requestReviewers": [ "@dabrady", "@MyCompany/moderators" ],
@@ -146,7 +146,7 @@ steps:
   with:
     files-to-judge: >-
       src/modules/frobnicate/that-one-file-we-probly-shouldnt-touch.bat
-    do-this-in-response: |
+    respond-with: |
     {
       "comment": "Sorry, gonna need approval from da boss on this one.",
       "requestReviewers": [ "@dabrady" ],

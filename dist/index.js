@@ -126,7 +126,7 @@ const FAILURE_MESSAGE = `Meaningless changes have been made to:\n`;
 async function nodiff({
   filesToJudge,
   baseGitRef,
-  doThisInResponse: {
+  respondWith: {
     requestReviewers: githubHandles,
     comment,
     fail
@@ -268,20 +268,21 @@ nodiff({
  */
 function extractActionInputs() {
   try {
-    var doThisInResponse = JSON.parse((0,core.getInput)('do-this-in-response', {required: false}));
+    var respondWith = JSON.parse((0,core.getInput)('respond-with', {required: false}));
   } catch (syntaxError) {
-    throw new SyntaxError('`do-this-in-response` must be valid JSON, please correct your workflow config');
+    throw new SyntaxError('`respond-with` must be valid JSON, please correct your workflow config');
   }
 
   // NOTE(dabrady) `getInput` will return an empty string if the input is not provided, so operation chaining is null-safe here.
   var filesToJudge = (0,core.getInput)('files-to-judge', {required: false}).split('\n').join(' ');
   var githubToken = (0,core.getInput)('github-token', {
     // NOTE(dabrady) If review requests or leaving a comment are desired in response to meaningless changes, a GitHub token is required.
-    required: (doThisInResponse.requestReviewers || doThisInResponse.comment)
+    required: (respondWith.requestReviewers || respondWith.comment)
   });
 
-  return { doThisInResponse, filesToJudge, githubToken };
+  return { respondWith, filesToJudge, githubToken };
 }
+
 
 
 /***/ }),

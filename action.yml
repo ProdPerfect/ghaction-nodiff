@@ -12,7 +12,7 @@ inputs:
       @see https://yaml-multiline.info
     required: false
 
-  do-this-in-response:
+  respond-with:
     description: |
       If no meaningful changes to the monitored file(s) are detected, this
       action can respond in one or more predefined ways. By default, this
@@ -47,7 +47,7 @@ inputs:
              - docs/dontreadme.md
              Did you intend to touch them?
 
-        - `alert` (array of strings)
+        - `requestReviewers` (array of strings)
           If provided, these users/aliases will be requested to leave a review.
 
         - `fail` (boolean)
