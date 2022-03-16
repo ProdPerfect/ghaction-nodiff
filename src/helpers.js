@@ -82,7 +82,7 @@ export async function submitReview(comment, githubToken, actionPayload, { action
  *     // -> "Today is Tuesday, but tomorrow is actually the day after Tuesday, which is Wednesday."
  */
 export function hydrateTemplateString(string, templateVariables = {}) {
-  var PLACEHOLDER_PATTERN = /%{(\w+)}/;
+  var PLACEHOLDER_PATTERN = /%{(\w+)}/gm;
   return string.replace(PLACEHOLDER_PATTERN, function replaceTemplateVariable(fullMatch, templateVariable) {
     return (templateVariable in templateVariables) ? templateVariables[templateVariable] : fullMatch;
   });
