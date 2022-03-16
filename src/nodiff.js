@@ -10,10 +10,10 @@ import {
 const FAILURE_MESSAGE = `Meaningless changes have been made to:\n`;
 
 /**
- * This action lets you react when no meaningful changes are made within a given change set.
+ * This action lets you react when meaningless changes are made within a given change set.
  *
  * Currently, a 'meaningless' change is defined in terms of whitespace, but it can be extended later. It can be
- * configured to monitor an entire project or a set of files within it, and by default it simply fails if the given
+ * configured to monitor an entire project or a set of files within it, and by default it simply fails if part of the given
  * change set makes 'no difference' to the codebase.
  *
  * You can also configure it to react with one or more of a small set of predefined and slightly configurable actions,
