@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import merge from 'lodash.merge';
-import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as helpers from '../src/helpers';
 
