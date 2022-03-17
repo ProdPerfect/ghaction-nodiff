@@ -35,17 +35,17 @@ export default async function nodiff({
   await fetchGitRef(baseGitRef);
 
   // Get the list of files that have been changed meaninglessly.
-  var fileList = await meaninglessDiff(filesToJudge, baseGitRef);
-  if (fileList.length <= 0) {
+  var files = await meaninglessDiff(filesToJudge, baseGitRef);
+  if (files.length <= 0) {
     // Hurray, no meaningless changes.
     return null;
   }
 
   // Process the results.
   var outputs = {
-    files: fileList.join(' '),
+    files: files.join(' '),
     // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
-    filesAsMarkdownList: fileList.join('\n').replace(/^/gm, '- ')
+    filesAsMarkdownList: files.join('\n').replace(/^/gm, '- ')
   };
   info(FAILURE_MESSAGE + outputs.files);
 
