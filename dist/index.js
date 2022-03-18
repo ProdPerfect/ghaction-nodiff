@@ -111,7 +111,8 @@ function hydrateTemplateString(string, templateVariables = {}) {
 
 
 
-const FAILURE_MESSAGE = `Meaningless changes have been made to:\n`;
+// TODO(dabrady) Improve this message or parameterize it if we ever expand the definition of 'meaningless'.
+const FAILURE_MESSAGE = "Whitespace changes aren't allowed but have been made to:\n%{files}";
 
 /**
  * This action lets you react when meaningless changes are made within a given change set.
@@ -151,7 +152,8 @@ async function nodiff({
     // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
     filesAsMarkdownList: files.join('\n').replace(/^/gm, '- ')
   };
-  (0,core.info)(FAILURE_MESSAGE + outputs.files);
+  var failureMessage = hydrateTemplateString(FAILURE_MESSAGE, outputs);
+  (0,core.info)(failureMessage);
 
   // Respond as directed. Any or all of these may be provided.
   if (githubHandles) {
@@ -167,7 +169,7 @@ async function nodiff({
     );
   }
   if (fail) {
-    (0,core.setFailed)(FAILURE_MESSAGE + outputs.filesAsMarkdownList);
+    (0,core.setFailed)(failureMessage);
   }
 
   return outputs;

@@ -7,7 +7,8 @@ import {
   requestReviewers,
 } from './helpers';
 
-const FAILURE_MESSAGE = `Meaningless changes have been made to:\n`;
+// TODO(dabrady) Improve this message or parameterize it if we ever expand the definition of 'meaningless'.
+const FAILURE_MESSAGE = "Whitespace changes aren't allowed but have been made to:\n%{files}";
 
 /**
  * This action lets you react when meaningless changes are made within a given change set.
@@ -47,7 +48,8 @@ export default async function nodiff({
     // Prepend the string "- " to the beginning of each line, which is a file path, resulting in a Markdown list of files.
     filesAsMarkdownList: files.join('\n').replace(/^/gm, '- ')
   };
-  info(FAILURE_MESSAGE + outputs.files);
+  var failureMessage = hydrateTemplateString(FAILURE_MESSAGE, outputs);
+  info(failureMessage);
 
   // Respond as directed. Any or all of these may be provided.
   if (githubHandles) {
@@ -63,7 +65,7 @@ export default async function nodiff({
     );
   }
   if (fail) {
-    setFailed(FAILURE_MESSAGE + outputs.filesAsMarkdownList);
+    setFailed(failureMessage);
   }
 
   return outputs;
