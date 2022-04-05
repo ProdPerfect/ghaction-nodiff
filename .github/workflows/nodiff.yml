@@ -15,7 +15,7 @@ jobs:
         uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          do-this-in-response: |
+          respond-with: |
             {
               "requestReviewers": ["dabrady", "devtools-p2"],
               "comment": "You made meaningless changes to these:\n%{filesAsMarkdownList}\n\nEnsure you're leaving the code better than you found it!",

@@ -4,8 +4,19 @@ module.exports = {
 
     // @see https://github.com/getify/eslint-plugin-proper-ternary
     "plugin:@getify/proper-ternary/getify-says",
-    // @se https://github.com/getify/eslint-plugin-proper-arrows
-    "plugin:@getify/proper-arrows/getify-says",
+  ],
+
+  overrides: [
+    {
+      files: ['*.js'],
+      // NOTE(dabrady) Jest takes advantage of some ES6 syntax which I usually avoid in order to provide some nice,
+      // concise test semantics, so I'm excluding them from certain rule enforcement.
+      excludedFiles: 'tests/**/*.js',
+      extends: [
+        // @see https://github.com/getify/eslint-plugin-proper-arrows
+        "plugin:@getify/proper-arrows/getify-says"
+      ]
+    }
   ],
 
   parserOptions: {
