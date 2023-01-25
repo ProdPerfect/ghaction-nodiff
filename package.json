@@ -37,7 +37,7 @@
     "@babel/preset-env": "^7.16.11",
     "@getify/eslint-plugin-proper-arrows": "^11.0.3",
     "@getify/eslint-plugin-proper-ternary": "^3.1.1",
-    "@vercel/ncc": "^0.27.0",
+    "@vercel/ncc": "^0.36.1",
     "babel-jest": "^27.5.1",
     "eslint": "^8.11.0",
     "jest": "^26.6.3"
